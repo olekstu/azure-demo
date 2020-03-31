@@ -1,0 +1,2987 @@
+openapi: "3.0.1"
+info:
+  title: CustomerApi
+  version: '11.1.1'
+  description: |
+    An API for Mollers customer model. **NOTE:** Although the core entity in the API is the Party entity, a
+    Party is either a Person or an Organisation. The value of the partyType-field is used as a discriminator.
+    There are therefore two possible structures on the request bodies when operating on Parties.
+    ### Creating a Person
+    `POST /parties`
+    ```json
+    {
+      "partyType": "Person",
+      "countryCode": "NO",
+      "preferredLanguage": "Norwegian",
+      "customerStatus": "Lead",
+      "firstname": "Steve",
+      "middlename": null,
+      "surname": "Jobs"
+    }
+    ```
+    ### Creating an Organisation
+    `POST /parties`
+    ```json
+    {
+      "partyType": "Organisation",
+      "countryCode": "EN",
+      "preferredLanguage": "English",
+      "customerStatus": "Lead",
+      "organisationNumber": "999999999",
+      "taxNumber1": 123
+      "taxNumber2": 456
+      "VATNumber": 789
+      "legalName": "Apple Inc."
+      "aliasName": "Apple"
+      "industryCode": "code",
+    }
+servers:
+  - url: http://{environment}/CustomerApiEndpoint/api
+    variables:
+      environment:
+        default: apidev.moller.local
+        enum:
+          - localhost:9266
+          - apidev.moller.local
+          - apitest.moller.local
+          - apistaging.moller.local
+          - api.moller.local
+security:
+  - mollerApiKey: []
+paths:
+  /parties:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Source-Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Party'
+      description: Create a new party from a JSON object
+      tags:
+        - Party
+      operationId: postParty
+      responses:
+        '201':
+          description: The created party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}:
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      description: Patches a party with the given id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                surname: Gates
+      tags:
+        - Party
+      operationId: patchParty
+      responses:
+        '200':
+          description: Updated party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      description: Updates a party with the given id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Party'
+      tags:
+        - Party
+      operationId: putParty
+      responses:
+        '200':
+          description: Updated party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Gets a party for a given id. A party is either an Origanisation or a Person.
+      tags:
+        - Party
+      operationId: getParty
+      responses:
+        '200':
+          description: The party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /partiesExtended:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Source-Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyExtended'
+      description: Create a new party from a JSON object including party, phone, electronic address and address
+      tags:
+        - Party
+      operationId: postPartyExtended
+      responses:
+        '201':
+          description: The created party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyExtended'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /partiesExtended/v2:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Source-Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyExtendedV2'
+      description: Create a new party from a JSON object including party, phone, electronic address, dealer relation and address. All subentity fields are lists, but only phones currently support multiple entities.
+      tags:
+        - Party
+      operationId: postPartyExtendedV2
+      responses:
+        '201':
+          description: The created party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyExtendedV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/carRelations:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: "#/components/parameters/includeExpired"
+      description: Find a collection of vehicle relations for a given party
+      tags:
+        - Car relation
+      operationId: getCarRelations
+      responses:
+        '200':
+          description: Returns a list of vehicle relations or an empty list if no vehicle relations where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyCarRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyCarRelation'
+      description: Create a new car relation for the given party. Even though the car entity is displayed, it cannot be created through this endpoint.
+      tags:
+        - Car relation
+      operationId: postCarRelation
+      responses:
+        '201':
+          description: The created car relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyCarRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/carRelations/{partyCarId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/partyCarId"
+    patch:
+      deprecated: true
+      description: Patches a car relation for a party with the given id. Even though the car entity is displayed, it cannot be modified through this endpoint.
+      operationId: patchCarRelation
+      tags:
+        - Car relation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                type: "Owner"
+      responses:
+        '200':
+          description: The updated Car relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyCarRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyCarRelation'
+      description: Change a car relation. Even though the car entity is displayed, it cannot be modified through this endpoint.
+      tags:
+        - Car relation
+      operationId: putCarRelation
+      responses:
+        '200':
+          description: The changed car relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyCarRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes a carRelation for a party with the given id. This does not delete the car.
+      tags:
+        - Car relation
+      operationId: deleteCarRelation
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/dealerRelations/v2:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of dealer relations for a given party
+      tags:
+        - Dealer relation
+      operationId: getDealerRelationsV2
+      responses:
+        '200':
+          description: Returns a list of dealer relations or an empty list if no dealer relations where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyDealerRelationV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyDealerRelationV2'
+      description: Create a new dealer relation for the given party
+      tags:
+        - Dealer relation
+      operationId: postDealerRelationsV2
+      responses:
+        '201':
+          description: The created dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyDealerRelationV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/dealerRelations/v2/{partyDealerId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/partyDealerId"
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyDealerRelationV2'
+      description: Change a dealer relation
+      tags:
+        - Dealer relation
+      operationId: putDealerRelationV2
+      responses:
+        '200':
+          description: The changed dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyDealerRelationV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonlegalSuborganisations/{nonLegalSuborgId}/dealerRelations/v2:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: The dealer relations of a non legal suborganization of given organisational party
+      tags:
+        - Dealer relation
+      operationId: getNonLegalSuborganizationsDealerRelationsV2
+      responses:
+        '200':
+          description: An array of Dealer relations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyDealerRelationV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/dealerRelations:
+    get:
+      deprecated: true
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of dealer relations for a given party
+      tags:
+        - Dealer relation
+      operationId: getDealerRelations
+      responses:
+        '200':
+          description: Returns a list of dealer relations or an empty list if no dealer relations where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyDealerRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyDealerRelation'
+      description: Create a new dealer relation for the given party
+      tags:
+        - Dealer relation
+      operationId: postDealerRelations
+      responses:
+        '201':
+          description: The created dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyDealerRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/dealerRelations/{partyDealerId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/partyDealerId"
+    put:
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyDealerRelation'
+      description: Change a dealer relation
+      tags:
+        - Dealer relation
+      operationId: putDealerRelation
+      responses:
+        '200':
+          description: The changed dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyDealerRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes a dealerRelation for a party with the given id.
+      tags:
+        - Dealer relation
+      operationId: deleteDealerRelation
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonlegalSuborganisations/{nonLegalSuborgId}/dealerRelations:
+    get:
+      deprecated: true
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: The dealer relations of a non legal suborganization of given organisational party
+      tags:
+        - Dealer relation
+      operationId: getNonLegalSuborganizationsDealerRelations
+      responses:
+        '200':
+          description: An array of Dealer relations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyDealerRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/preferredDealers/v2:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: A collection of preferred dealers for a given party
+      tags:
+        - Preferred Dealer
+      operationId: getPreferredDealersV2
+      responses:
+        '200':
+          description: Returns a list of preferred dealers or an empty list if no preferred dealers where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreferredDealerV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferredDealerV2'
+      description: Create a new preferred dealer relation
+      tags:
+        - Preferred Dealer
+      operationId: postPreferredDealerV2
+      responses:
+        '201':
+          description: The created preferred dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferredDealerV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/preferredDealers/v2/{partyPreferredDealerId}:
+    put:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+        - $ref: "#/components/parameters/partyPreferredDealerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferredDealerV2'
+      description: Change a preferred dealer relation
+      tags:
+        - Preferred Dealer
+      operationId: putPreferredDealerV2
+      responses:
+        '200':
+          description: The changed preferred dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferredDealerV2'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/preferredDealers:
+    get:
+      deprecated: true
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: A collection of preferred dealers for a given party
+      tags:
+        - Preferred Dealer
+      operationId: getPreferredDealers
+      responses:
+        '200':
+          description: Returns a list of preferred dealers or an empty list if no preferred dealers where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreferredDealer'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferredDealer'
+      description: Create a new preferred dealer relation
+      tags:
+        - Preferred Dealer
+      operationId: postPreferredDealer
+      responses:
+        '201':
+          description: The created preferred dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferredDealer'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/preferredDealers/{partyPreferredDealerId}:
+    put:
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+        - $ref: "#/components/parameters/partyPreferredDealerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferredDealer'
+      description: Change a preferred dealer relation
+      tags:
+        - Preferred Dealer
+      operationId: putPreferredDealer
+      responses:
+        '200':
+          description: The changed preferred dealer relation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferredDealer'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+        - $ref: "#/components/parameters/partyPreferredDealerId"
+      description: Delete a preferred dealer relation
+      tags:
+        - Preferred Dealer
+      operationId: deletePreferredDealer
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/addresses:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of addresses for a given party
+      tags:
+        - Address
+      operationId: getAddresses
+      responses:
+        '200':
+          description: Returns a list of addresses or an empty list if no addresses where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyAddress'
+      description: Assign the party to a new address (without disconnecting it from any old address)
+      tags:
+        - Address
+      operationId: postPartyAddress
+      responses:
+        '201':
+          description: The address and address relation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/addresses/{partyAddressId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/partyAddressId"
+    patch:
+      description: Patches an address relation for a party with the given id
+      operationId: patchPartyAddress
+      tags:
+        - Address
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                pOBoxPostalCode: "4747"
+      responses:
+        '200':
+          description: The updated PartyAddress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      description: Updates an address relation for a party with the given id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyAddress'
+      tags:
+        - Address
+      operationId: putPartyAddress
+      responses:
+        '200':
+          description: The address and the updated AddressRelation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes an addressRelation for a party with the given id.
+      tags:
+        - Address
+      operationId: deletePartyAddress
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonlegalSuborganisations/{nonLegalSuborgId}/addresses:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: The addresses of a non legal suborganization of given organisational party
+      tags:
+        - Address
+      operationId: getNonLegalSuborganizationAddresses
+      responses:
+        '200':
+          description: An array of addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/phones:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of phones for a given party
+      tags:
+        - Phone
+      operationId: getPhones
+      responses:
+        '200':
+          description: Returns a list of phones or an empty list if no phones where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyPhone'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyPhone'
+      description: Assign the party to a phone
+      tags:
+        - Phone
+      operationId: postPartyPhone
+      responses:
+        '201':
+          description: The phone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyPhone'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/phones/{phoneId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/phoneId"
+    patch:
+      description: Patches a phone for a party with the given id
+      operationId: patchPhone
+      tags:
+        - Phone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                phoneNumber: 98765432
+      responses:
+        '200':
+          description: The updated phone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyPhone'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      description: Updates a phone for a party with the given id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyPhone'
+      tags:
+        - Phone
+      operationId: putPartyPhone
+      responses:
+        '200':
+          description: The phone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyPhone'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes a phone for a party with the given id.
+      tags:
+        - Phone
+      operationId: deletePartyPhone
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonlegalSuborganisations/{nonLegalSuborgId}/phones:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: The phones of a non legal suborganization of given organisational party
+      tags:
+        - Phone
+      operationId: getNonLegalSuborganizationsPhones
+      responses:
+        '200':
+          description: An array of phones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyPhone'
+  /parties/{partyId}/electronicAddresses:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of electronic addresses for a given party
+      tags:
+        - Electronic address
+      operationId: getElectronicAddresses
+      responses:
+        '200':
+          description: Returns a list of electronic addresses or an empty list if no electronic addresses where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyElectronicAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyElectronicAddress'
+      description: Create a new electronic address for the given party
+      tags:
+        - Electronic address
+      operationId: postPartyElectronicAddress
+      responses:
+        '201':
+          description: The electronic address and address relation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyElectronicAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/electronicAddresses/{electronicAddressId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/electronicAddressId"
+    patch:
+      description: Patches an electronic address for a party with the given id
+      operationId: patchElectronicAddress
+      tags:
+        - Electronic address
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                electronicAddress: bill.gates@microsoft.com
+      responses:
+        '200':
+          description: The updated electronic address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyElectronicAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyElectronicAddress'
+      description: Change an electronic address for a party with the given id
+      tags:
+        - Electronic address
+      operationId: putPartyElectronicAddress
+      responses:
+        '200':
+          description: The changed electronic address and address relation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyElectronicAddress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes an electronic address for a party with the given id.
+      tags:
+        - Electronic address
+      operationId: deletePartyElectronicAddress
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonlegalSuborganisations/{nonLegalSuborgId}/electronicAddresses:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: The electronic addresses of a non legal suborganization of given organisational party
+      tags:
+        - Electronic address
+      operationId: getNonLegalSuborganizationsElectronicAddresses
+      responses:
+        '200':
+          description: An array of electronic addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyElectronicAddress'
+  /parties/{partyId}/consents:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: Find a collection of consents for a given party.
+      tags:
+        - Consent
+      operationId: getConsents
+      responses:
+        '200':
+          description: Returns a list of consents or an empty list if no consent where found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Consent'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/consents/{consentId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/consentId"
+    put:
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Consent'
+      description: Change a consent for a party with the given id.
+      tags:
+        - Consent
+      operationId: putConsent
+      responses:
+        '200':
+          description: The Consent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consent'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                activeConsent: Yes
+      description: Changes a consent for a party with the given id.
+      tags:
+        - Consent
+      operationId: patchConsent
+      responses:
+        '200':
+          description: The Consent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consent'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/communicationPreferences:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: The communication preferrences of a party
+      tags:
+        - Communication Preference
+      operationId: getCommunicationPreferences
+      responses:
+        '200':
+          description: A list of all preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommunicationPreferences'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/communicationPreferences/{communicationPreferenceId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: "#/components/parameters/partyId"
+      - $ref: "#/components/parameters/communicationPreferenceId"
+    put:
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommunicationPreferences'
+      description: Update decision for communication preference for a party with the given id
+      tags:
+        - Communication Preference
+      operationId: putCommunicationPreference
+      responses:
+        '200':
+          description: The Communication Preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunicationPreferences'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                decision: Yes
+      description: Change decision for communication preference for a party with the given id
+      tags:
+        - Communication Preference
+      operationId: patchCommunicationPreference
+      responses:
+        '200':
+          description: The Communication Preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunicationPreferences'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/externalIds:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: The external IDs of a party
+      tags:
+        - External ID
+      operationId: getExternalIds
+      responses:
+        '200':
+          description: A list of all external IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExternalId'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalId'
+      description: Create a new external id for the given party
+      tags:
+        - External ID
+      operationId: postExternalId
+      responses:
+        '201':
+          description: The External ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalId'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/externalIds/{externalIdId}:
+    parameters:
+      - $ref: '#/components/parameters/System-Name'
+      - $ref: '#/components/parameters/partyId'
+      - $ref: '#/components/parameters/externalIdId'
+    patch:
+      description: Patches a external id for a person with the given id
+      operationId: patchExternalId
+      tags:
+        - External ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                externalIdValue: 98765432
+      responses:
+        '200':
+          description: The External ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalId'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalId'
+      description: Change an external id for a party with the given id
+      tags:
+        - External ID
+      operationId: putExternalId
+      responses:
+        '200':
+          description: The External ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalId'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Deletes a external id for a party with the given id.
+      tags:
+        - External ID
+      operationId: deleteExternalId
+      responses:
+        '204':
+          description: Returned when deleting went OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cars:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Source-Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Car'
+      description: "Creates a new Car.<br/>This endpoint is meant for MNET only"
+      tags:
+        - Car
+      operationId: postCar
+      responses:
+        '201':
+          description: The Car
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Car'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cars/{carId}:
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/carId'
+        - $ref: '#/components/parameters/Source-Key'
+      description: "Patches a car with the given id.<br/>Note: You can only add new countries to sourceCountries, deleting from list is impossible.<br/>This endpoint is for MNET only"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                carModel: Golf
+      tags:
+        - Car
+      operationId: patchCar
+      responses:
+        '200':
+          description: Patched car
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Car'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      parameters:
+        - $ref: "#/components/parameters/carId"
+      description: Gets a single car
+      tags:
+        - Car
+      operationId: getCar
+      responses:
+        '200':
+          description: A car
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Car'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/carId"
+        - $ref: '#/components/parameters/Source-Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Car'
+      description: "Change a Car<br/>Note: You can only add new countries to sourceCountries, deleting from list is impossible.<br/>This endpoint is for MNET only"
+      tags:
+        - Car
+      operationId: putCar
+      responses:
+        '200':
+          description: The Car
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Car'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonLegalSuborganisations:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+      description: The non legal suborganizations of given organisational party
+      tags:
+        - Non legal suborganisation
+      operationId: getNonLegalSuborganizations
+      responses:
+        '200':
+          description: The non legal suborganizations of given organisational party
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NonLegalSuborganisation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NonLegalSuborganisation'
+      description: Create a new Non legal suborganisation
+      tags:
+        - Non legal suborganisation
+      operationId: postNonLegalSuborganisation
+      responses:
+        '201':
+          description: The Non legal suborganisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonLegalSuborganisation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /parties/{partyId}/nonLegalSuborganisations/{nonLegalSuborgId}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      description: A non legal suborganization of an organisational party
+      tags:
+        - Non legal suborganisation
+      operationId: getNonLegalSuborganization
+      responses:
+        '200':
+          description: A non legal suborganizations of an organisational party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonLegalSuborganisation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: "#/components/parameters/partyId"
+        - $ref: '#/components/parameters/nonLegalSuborgId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NonLegalSuborganisation'
+      description: Change a Non legal suborganisation
+      tags:
+        - Non legal suborganisation
+      operationId: putNonLegalSuborganisation
+      responses:
+        '200':
+          description: The Non legal suborganisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonLegalSuborganisation'
+  /dealers/{dealerId}/brandRelations:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/dealerId'
+      description: Returns a list of related brands to the given dealer
+      tags:
+        - Dealer
+      operationId: getDealerBrandRelations
+      responses:
+        '200':
+          description: An array of Brand relations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DealerBrandRelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /health/kafka:
+    get:
+      description: Kafka health check
+      tags:
+        - Health
+      operationId: kafkaHealth
+      responses:
+        '200':
+          description: Returned when Kafka is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: KafkaServer OK
+        '500':
+          description: Returned when Kafka cannot be accessed
+  /health/db:
+    get:
+      description: DB health check
+      tags:
+        - Health
+      operationId: dbHealth
+      responses:
+        '200':
+          description: Returned when DB is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: DB OK
+        '500':
+          description: Returned when DB cannot be accessed
+  /health/mdm:
+    get:
+      description: MDM health check
+      tags:
+        - Health
+      operationId: mdmHealth
+      responses:
+        '200':
+          description: Returned when MDM is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: MDM OK
+        '500':
+          description: Returned when MDM cannot be accessed
+  /health/elasticsearch:
+    get:
+      description: Elasticsearch health check
+      tags:
+        - Health
+      operationId: elasticsearchHealth
+      responses:
+        '200':
+          description: Returned when Elasticsearch is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Elasticsearch OK
+        '500':
+          description: Returned when Elasticsearch cannot be accessed
+  /health:
+    get:
+      description: Health check
+      tags:
+        - Health
+      operationId: health
+      responses:
+        '200':
+          description: Returned when API is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: CustomerApiEndpoint OK
+        '500':
+          description: Returned when API cannot be accessed
+  /admin/elasticsearch/party/reindex:
+    post:
+      description: Batch reindexing for party
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexParties
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/organisation/reindex:
+    post:
+      description: Batch reindexing for brreg organisations
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexBrregOrganisations
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/address/reindex:
+    post:
+      description: Batch reindexing for addresses
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexAddresses
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/phone/reindex:
+    post:
+      description: Batch reindexing for phones
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexPhones
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/carrelation/reindex:
+    post:
+      description: Batch reindexing for car relations
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexCarRelations
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/electronicaddress/reindex:
+    post:
+      description: Batch reindexing for electronic addresses
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexElectronicAddresses
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/dealerrelation/reindex:
+    post:
+      description: Batch reindexing for dealer relations
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexDealerRelations
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/consent/reindex:
+    post:
+      description: Batch reindexing for consents
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexConsents
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/communicationpreferences/reindex:
+    post:
+      description: Batch reindexing for communication preferences
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexCommunicationPreferences
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/elasticsearch/dealerbrandrelation/reindex:
+    post:
+      description: Batch reindexing for dealer brand relations
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexDealerBrandRelations
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/externalid/reindex:
+    post:
+      description: Batch reindexing for external ids
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexExternalIds
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/preferreddealer/reindex:
+    post:
+      description: Batch reindexing for preferred dealers
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexPreferredDealers
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/car/reindex:
+    post:
+      description: Batch reindexing for cars
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexCars
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/elasticsearch/nonlegalsuborganisation/reindex:
+    post:
+      description: Batch reindexing for non legal suborganisation
+      tags:
+        - ElasticSearchAdmin
+      operationId: reindexNonLegalSuborganisation
+      responses:
+        '204':
+          description: Returned when reindexing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/refreshCache:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Refresh-Source'
+      description: Delete an entity from cache and fetch it from MDM and send update to Kafka
+      tags:
+        - Cache Operations
+      operationId: refreshCache
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshEvent'
+      responses:
+        '204':
+          description: Returned when refreshing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/refreshPartyFull:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/System-Name'
+        - $ref: '#/components/parameters/Refresh-Source'
+      description: Refreshes a party and all its sub entities and send update to Kafka
+      tags:
+        - Cache Operations
+      operationId: refreshPartyFull
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                minimum: 0
+      responses:
+        '204':
+          description: Returned when refreshing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/loadParties:
+    post:
+      description: For internal use only. Will get all parties in the request body in parallell and insert them into the database only, but not in elastic search. Will *not* produce update on Kafka
+      tags:
+        - Cache Operations
+      operationId: loadParties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                partyids:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 0
+      responses:
+        '204':
+          description: Returned when refreshing went OK
+        '500':
+          description: Returned when something failed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Could not refresh party because reasons
+  /admin/restartMerge:
+    post:
+      description: Restart the process of merging two entities in the cache
+      tags:
+        - Cache Operations
+      operationId: restartMerge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestartMergeEvent'
+      responses:
+        '204':
+          description: Returned when refreshing went OK
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /search:
+    post:
+      description: Global search for all entities in the Customer Api. This will search all indices and return a list of results of varying types.
+      tags:
+        - Search
+      parameters:
+        - $ref: "#/components/parameters/globalSearchKeyword"
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/size'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                query:
+                  multi_match:
+                    query: Audi
+                    fields: brand
+      operationId: searchGlobal
+      responses:
+        '200':
+          description: Returned when search is successfully executed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchHit'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /partySearch:
+    post:
+      description: Global search that will return only party search hits. You can search by party or phone and get related party as search result. Since this search will search for all matching Party Ids in the party index, the scores for each search result will be identical.
+      tags:
+        - Search
+      parameters:
+        - $ref: "#/components/parameters/globalSearchKeyword"
+        - $ref: "#/components/parameters/partyType"
+        - $ref: "#/components/parameters/countryCode"
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/size'
+      operationId: partySearch
+      responses:
+        '200':
+          description: Returned when search is successfully executed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchHit'
+        '500':
+          description: Returned when search execution failed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Could not perform search
+
+components:
+  responses:
+    NotFound:
+      description: The entity could not be found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    ApiError:
+      properties:
+        message:
+          type: string
+        correlationId:
+          type: string
+        timestamp:
+          type: string
+          format: 'date-time'
+        username:
+          type: string
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason'
+    Reason:
+      properties:
+        field:
+          type: string
+        value:
+          type: string
+        message:
+          type: string
+    PartyAddress:
+      type: object
+      description: The address of a party
+      properties:
+        type:
+          type: string
+          enum: [
+            LegalAddress,
+            StreetAddress,
+            PostalAddress,
+            ShipToAddress,
+            BillingAddress,
+            PayerAddress
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'LegalAddress' - 'LG'
+              * 'StreetAddress' - 'ST'
+              * 'PostalAddress' - 'PO'
+              * 'ShipToAddress' - 'SH'
+              * 'BillingAddress' - 'BL'
+              * 'PayerAddress' - 'PY'
+          example: "StreetAddress"
+        line1:
+          type: string
+        line2:
+          type: string
+        postcode:
+          type: string
+          example: "00111"
+        city:
+          type: string
+        pOBox:
+          type: string
+        pOBoxLobby:
+          type: string
+        pOBoxPostalCode:
+          type: string
+        pOBoxPostalCity:
+          type: string
+        careOf:
+          type: string
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+        region:
+          type: string
+        addressId:
+          type: integer
+          readOnly: true
+        partyAddressId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        nonLegalSuborgId:
+          type: integer
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    Brand:
+      type: string
+      enum: [
+        Volkswagen,
+        Audi,
+        Skoda,
+        VolkswagenCommercialVehicles,
+        Seat,
+        Other
+      ]
+      description: >
+        Mapping to MDM codes:
+          * 'Volkswagen' - '1'
+          * 'Audi' - '2'
+          * 'Skoda' - '3'
+          * 'VolkswagenCommercialVehicles' - '4'
+          * 'Seat' - '5'
+          * 'Other' - '6'
+    DealerType:
+      type: string
+      enum: [
+        Sales,
+        Service
+      ]
+      description: >
+        Mapping to MDM codes:
+          * 'Sales' - '1'
+          * 'Service' - '2'
+    CommunicationChannel:
+      type: string
+      enum: [
+        Email,
+        SMS,
+        Other
+      ]
+      description: >
+        Mapping to MDM codes:
+          * 'Email' - 'E'
+          * 'SMS' - 'S'
+          * 'Other' - 'O'
+    CommunicationPreferences:
+      type: object
+      description: The communication preferences of a party. Defines how a party preferes to be contacted for a given type of content.
+      properties:
+        communicationChannel:
+          $ref: '#/components/schemas/CommunicationChannel'
+        brand:
+          $ref: '#/components/schemas/Brand'
+        decision:
+          $ref: '#/components/schemas/YesOrNo'
+        communicationPreferenceId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+      required:
+        - communicationChannel
+        - brand
+        - decision
+    YesOrNo:
+      type: string
+      enum: [
+        "Yes",
+        "No",
+        "Undecided"
+      ]
+      description: >
+        Mapping to MDM codes:
+          * 'Yes' - '1'
+          * 'No' - '0'
+          * 'Undecided' - '9'
+    Consent:
+      type: object
+      description: A consent given by a Party which indicates any freely given, specific, informed and unambiguous indication of the data subject's wishes by which he or she, by a statement or by a clear affirmative action, signifies agreement to the processing of personal data relating to him or her.
+      properties:
+        brand:
+          $ref: '#/components/schemas/Brand'
+        activeConsent:
+          $ref: '#/components/schemas/YesOrNo'
+        consentId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+      required:
+        - brand
+        - activeConsent
+    PartyCarRelation:
+      type: object
+      description: A relation between a Party and a Car.
+      required:
+        - carId
+      properties:
+        carId:
+          type: integer
+        type:
+          type: string
+          enum: [
+            Owner,
+            Renter,
+            User
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'Owner' - 'B'
+              * 'Renter' - 'L'
+              * 'User' - 'C'
+        car:
+          $ref: '#/components/schemas/Car'
+        partyCarId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+        relationEndDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    Car:
+      type: object
+      description: A Car
+      readOnly: true
+      required:
+        - vin
+      properties:
+        carId:
+          type: integer
+          readOnly: true
+        registrationNumber:
+          type: string
+        vin:
+          type: string
+        carModel:
+          type: string
+        modelYear:
+          type: string
+        brandCode:
+          $ref: '#/components/schemas/Brand'
+        nextPKK:
+          type: string
+          format: date
+        latestPKK:
+          type: string
+          format: date
+        lastRegistrationDate:
+          type: string
+          format: date
+        firstRegistrationDate:
+          type: string
+          format: date
+        vehicleGroup:
+          type: string
+        sourceCountries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryCode'
+    PartyDealerRelation:
+      type: object
+      description: The relation between a Party and Dealer.
+      required:
+        - dealer
+      properties:
+        dealer:
+          $ref: '#/components/schemas/Dealer'
+        partyDealerId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        nonLegalSuborgId:
+          type: integer
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    PartyDealerRelationV2:
+      type: object
+      description: The relation between a Party and Dealer.
+      required:
+        - dealer
+      properties:
+        dealer:
+          $ref: '#/components/schemas/DealerV2'
+        partyDealerId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        nonLegalSuborgId:
+          type: integer
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    Dealer:
+      type: object
+      description: A dealer. Dealers are also nonlegal suborganisations of legal parties.
+      required:
+        - dealerId
+        - countryCode
+      properties:
+        dealerId:
+          type: string
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+        name:
+          type: string
+          readOnly: true
+        operationStart:
+          type: string
+          format: 'date-time'
+          readOnly: true
+        operationEnd:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    DealerV2:
+      type: object
+      description: A dealer. Dealers are also nonlegal suborganisations of legal parties.
+      required:
+        - dealerId
+      properties:
+        dealerId:
+          type: string
+        name:
+          type: string
+          readOnly: true
+        operationStart:
+          type: string
+          format: 'date-time'
+          readOnly: true
+        operationEnd:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    DealerBrandRelation:
+      type: object
+      description: A relation between a Dealer and a Brand.
+      properties:
+        dealerBrandId:
+          type: integer
+        dealerId:
+          type: string
+        brand:
+          $ref: '#/components/schemas/Brand'
+        type:
+          $ref: '#/components/schemas/DealerType'
+        relationStartDate:
+          type: string
+          format: 'date-time'
+    NonLegalSuborganisation:
+      type: object
+      description: A nonlegal part of an organization. Can be a department etc.
+      properties:
+        nonlegalSuborgId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          description: The owning organisation
+          readOnly: true
+        name:
+          type: string
+        contactPerson:
+          type: string
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    Organisation:
+      description: A legal organisation.
+      allOf:
+        - $ref: '#/components/schemas/Party'
+        - type: object
+          properties:
+            organisationNumber:
+              type: string
+            taxNumber1:
+              type: integer
+            taxNumber2:
+              type: integer
+            VATNumber:
+              type: integer
+            VATNumberString:
+              type: string
+            legalName:
+              type: string
+            aliasName:
+              type: string
+            industryCode:
+              type: string
+            organisationUpdatedDate:
+              type: string
+              format: 'date-time'
+            organisationalStructure:
+              type: string
+              enum: [
+                "AAFY", "BO", "BRL", "DA", "ENK", "EOFG", "ESEK", "FKF", "FLI", "FYLK", "GFS", "ADOS",
+                "IKJP", "IKS", "KBO", "KF", "KIRK", "KOMM", "KS", "KTRF", "NUF", "OPMV", "ANNA",
+                "ORGL", "PERS", "PK", "PRE", "REV", "SA", "SÆR", "SAM", "SE", "SF", "ANS", "SPA",
+                "STAT", "STI", "TVAM", "UDEF", "UTLA", "VPFO", "AS", "ASA", "BA", "BBL", "BEDR"
+              ]
+            organisationType:
+              type: string
+              enum: [
+                ExternalPrivateSector,
+                ExternalPublicSector,
+                Freestanding,
+                Internal
+              ]
+              description: >
+                Mapping to MDM codes:
+                  * 'ExternalPrivateSector' - 'PR'
+                  * 'ExternalPublicSector' - 'PU'
+                  * 'Freestanding' - 'FS'
+                  * 'Internal' - 'I'
+            operationStartDate:
+              type: string
+              format: 'date-time'
+            operationEndDate:
+              type: string
+              format: 'date-time'
+          required:
+            - organisationNumber
+    Party:
+      type: object
+      description: A legal Party, either a Person og an Organisation.
+      required:
+        - partyType
+      discriminator:
+        propertyName: partyType
+      properties:
+        partyId:
+          type: integer
+          readOnly: true
+        partyType:
+          $ref: '#/components/schemas/PartyType'
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+        preferredLanguage:
+          type: string
+          enum: [
+            Norwegian,
+            English
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'Norwegian' - 'NO'
+              * 'English' - 'EN'
+        customerStatus:
+          type: string
+          enum: [
+            Lead,
+            Inactive,
+            Deleted,
+            Active
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'Lead' - 'Q'
+              * 'Inactive' - 'P'
+              * 'Deleted' - 'D'
+              * 'Active' - 'A'
+    PartyElectronicAddress:
+      type: object
+      description: An electronic address of a Party (or a non legal suborganization).
+      required:
+        - electronicAddress
+        - type
+      properties:
+        electronicAddress:
+          type: string
+        isEmailVerified:
+          type: boolean
+        type:
+          type: string
+          enum: [
+            AccountingEmail,
+            InvoicingEmail,
+            StandardEmail,
+            Facebook,
+            LinkedIn,
+            Twitter
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'AccountingEmail' - 'A'
+              * 'InvoicingEmail' - 'I'
+              * 'StandardEmail' - 'S'
+              * 'Facebook' - 'F'
+              * 'LinkedIn' - 'L'
+              * 'Twitter' - 'T'
+        electronicAddressId:
+          type: integer
+          readOnly: true
+        nonLegalSuborgId:
+          type: integer
+        nonLegalSuborganisationId:
+          type: integer
+          description: Alias of nonLegalSuborgId. Will only be used if nonLegalSuborgId is null.
+          deprecated: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    PartyPhone:
+      type: object
+      description: The Phone number of a Party (or a non legal suborganisation).
+      properties:
+        type:
+          type: string
+          enum: [
+            Mobile,
+            Work,
+            Private
+          ]
+          description: >
+            Mapping to MDM codes:
+              * 'Mobile' - 'M'
+              * 'Work' - 'W'
+              * 'Private' - 'P'
+        countryPhone:
+          $ref: '#/components/schemas/CountryCode'
+        phoneNumber:
+          type: string
+        isVerified:
+          type: boolean
+        partyId:
+          type: integer
+          readOnly: true
+        nonLegalSuborgId:
+          type: integer
+        phoneId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+      required:
+        - type
+        - phoneNumber
+    Person:
+      description: A legal Person.
+      allOf:
+        - $ref: '#/components/schemas/Party'
+        - type: object
+          properties:
+            firstname:
+              type: string
+            middlename:
+              type: string
+            surname:
+              type: string
+            birthDate:
+              type: string
+              format: date
+    PartyExtended:
+      description: A Person or Organisation including PartyPhone, PartyElectronicAddress and PartyAddress
+      required:
+        - party
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        phone:
+          $ref: '#/components/schemas/PartyPhone'
+        address:
+          $ref: '#/components/schemas/PartyAddress'
+        electronicAddress:
+          $ref: '#/components/schemas/PartyElectronicAddress'
+    PartyExtendedV2:
+      description: A Person or Organisation including lists of PartyPhone, PartyElectronicAddress, PartyDealerRelation and PartyAddress
+      required:
+        - party
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        phones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyPhone'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyAddress'
+        dealerRelations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyDealerRelationV2'
+        electronicAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyElectronicAddress'
+    PreferredDealerV2:
+      type: object
+      description: A relation between a Person and a Dealer indicating that the Dealer is a preferred Dealer.
+      required:
+        - dealer
+        #        Currently in MDM a lot for dealers are missing brand and type.
+        #        Uncomment when the data is ready and add to PreferredDealerValidator
+        #        - brand
+        #        - type
+      properties:
+        dealer:
+          $ref: '#/components/schemas/DealerV2'
+        brand:
+          $ref: '#/components/schemas/Brand'
+        type:
+          $ref: '#/components/schemas/DealerType'
+        partyPreferredDealerId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    PreferredDealer:
+      type: object
+      description: A relation between a Person and a Dealer indicating that the Dealer is a preferred Dealer.
+      required:
+        - dealer
+        #        Currently in MDM a lot for dealers are missing brand and type.
+        #        Uncomment when the data is ready and add to PreferredDealerValidator
+        #        - brand
+        #        - type
+      properties:
+        dealer:
+          $ref: '#/components/schemas/Dealer'
+        brand:
+          $ref: '#/components/schemas/Brand'
+        type:
+          $ref: '#/components/schemas/DealerType'
+        partyPreferredDealerId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+    ExternalId:
+      type: object
+      description: The external IDs of a Party. E.g. Audi connect ID.
+      properties:
+        externalIdId:
+          type: integer
+          readOnly: true
+        partyId:
+          type: integer
+          readOnly: true
+        externalIdType:
+          $ref: '#/components/schemas/Brand'
+        externalIdValue:
+          type: string
+          description: The value of the external ID
+        relationStartDate:
+          type: string
+          format: 'date-time'
+          readOnly: true
+      required:
+        - externalIdType
+        - externalIdValue
+    CountryCode:
+      type: string
+      enum: ["AF","AL","DZ","AS","AD","AO","AI","AQ","AG","AR","AM","AW","AU","AT","AZ","BS","BH","BD","BB","BY","BE",
+             "BZ","BJ","BM","BT","BO","BQ","BA","BW","BV","BR","IO","BN","BG","BF","BI","CV","KH","CM","CA","KY","CF",
+             "TD","CL","CN","CX","CC","CO","KM","CD","CG","CK","CR","HR","CU","CW","CY","CZ","CI","DK","DJ","DM","DO",
+             "EC","EG","SV","GQ","ER","EE","SZ","ET","FK","FO","FJ","FI","FR","GF","PF","TF","GA","GM","GE","DE","GH",
+             "GI","GR","GL","GD","GP","GU","GT","GG","GN","GW","GY","HT","HM","VA","HN","HK","HU","IS","IN","ID","IR",
+             "IQ","IE","IM","IL","IT","JM","JP","JE","JO","KZ","KE","KI","KP","KR","KW","KG","LA","LV","LB","LS","LR",
+             "LY","LI","LT","LU","MO","MK","MG","MW","MY","MV","ML","MT","MH","MQ","MR","MU","YT","MX","FM","MD","MC",
+             "MN","ME","MS","MA","MZ","MM","NA","NR","NP","NL","NC","NZ","NI","NE","NG","NU","NF","MP","NO","OM","PK",
+             "PW","PS","PA","PG","PY","PE","PH","PN","PL","PT","PR","QA","RO","RU","RW","RE","BL","SH","KN","LC","MF",
+             "PM","VC","WS","SM","ST","SA","SN","RS","SC","SL","SG","SX","SK","SI","SB","SO","ZA","GS","SS","ES","LK",
+             "SD","SR","SJ","SE","CH","SY","TW","TJ","TZ","TH","TL","TG","TK","TO","TT","TN","TR","TM","TC","TV","UG",
+             "UA","AE","GB","UM","US","UY","UZ","VU","VE","VN","VG","VI","WF","EH","YE","ZM","ZW","AX"
+      ]
+      description: ISO-3166 Alpha-2 country codes. For a full list see <https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes>.
+    SearchHit:
+      type: object
+      description: Search Hit modeled after Elasticsearch's own search result structure.
+      discriminator:
+        propertyName: searchHitType
+      required:
+        - searchHitType
+      properties:
+        index:
+          type: string
+        searchHitType:
+          $ref: '#/components/schemas/SearchHitType'
+        id:
+          type: string
+        score:
+          type: number
+    PartySearchHit:
+      description: Search Hit for the Party type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/Party'
+    AddressSearchHit:
+      description: Search Hit for the Address type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PartyAddress'
+    OrganisationSearchHit:
+      description: Search Hit for the BrregEnhet type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/BrregEnhet'
+    PhoneSearchHit:
+      description: Search Hit for the PartyPhone type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PartyPhone'
+    CarRelationSearchHit:
+      description: Search Hit for the CarRelation type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PartyCarRelation'
+    ElectronicAddressSearchHit:
+      description: Search Hit for the PartyElectronicAddress type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PartyElectronicAddress'
+    DealerRelationSearchHit:
+      description: Search Hit for the DealerRelation type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PartyDealerRelation'
+    ConsentSearchHit:
+      description: Search Hit for the Consent type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/Consent'
+    PreferredDealerSearchHit:
+      description: Search Hit for the Preferred Dealer type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/PreferredDealerV2'
+    DealerBrandRelationSearchHit:
+      description: Search Hit for the Dealer Brand Relation type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/DealerBrandRelation'
+    CommunicationPreferencesSearchHit:
+      description: Search Hit for CommunicationPreferences type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/CommunicationPreferences'
+    NonLegalSuborganisationSearchHit:
+      description: Search Hit for Non-legal Suborganisation type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/NonLegalSuborganisation'
+    ExternalIdSearchHit:
+      description: Search Hit for ExternalId type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/ExternalId'
+    CarSearchHit:
+      description: Search Hit for Car type
+      allOf:
+        - $ref: '#/components/schemas/SearchHit'
+        - type: object
+          properties:
+            source:
+              $ref: '#/components/schemas/Car'
+    PartyType:
+      type: string
+      enum: [
+        Person,
+        Organisation
+      ]
+    SearchHitType:
+      type: string
+      enum: [
+        PartySearchHit,
+        AddressSearchHit,
+        OrganisationSearchHit,
+        PhoneSearchHit,
+        CarRelationSearchHit,
+        ElectronicAddressSearchHit,
+        DealerRelationSearchHit,
+        ConsentSearchHit,
+        PreferredDealerSearchHit,
+        DealerBrandRelationSearchHit,
+        CommunicationPreferencesSearchHit,
+        ExternalIdSearchHit,
+        NonLegalSuborganisationSearchHit,
+        CarSearchHit
+      ]
+    BrregEnhet:
+      properties:
+        rowidObject:
+          type: string
+        organisasjonsnummer:
+          type: string
+        navn:
+          type: string
+        organisasjonsform:
+          $ref: '#/components/schemas/BrregOrganisasjonsform'
+        postadresse:
+          $ref: '#/components/schemas/BrregAdresse'
+        registreringsdatoEnhetsregisteret:
+          type: string
+        registrertIMvaregisteret:
+          type: boolean
+        frivilligMvaRegistrertBeskrivelser:
+          type: array
+          items:
+            type: string
+        naeringskode1:
+          $ref: '#/components/schemas/BrregNaeringskode'
+        naeringskode2:
+          $ref: '#/components/schemas/BrregNaeringskode'
+        naeringskode3:
+          $ref: '#/components/schemas/BrregNaeringskode'
+        antallAnsatte:
+          type: integer
+        forretningsadresse:
+          $ref: '#/components/schemas/BrregAdresse'
+        stiftelsedato:
+          type: string
+        institusjonellSektorkode:
+          $ref: '#/components/schemas/BrregSektorkode'
+        registrertIForetaksregisteret:
+          type: boolean
+        registrertIStiftelsesregisteret:
+          type: boolean
+        registrertIFrivillighetsregisteret:
+          type: boolean
+        sisteInnsendteAarsregnskap:
+          type: string
+        konkurs:
+          type: boolean
+        underAvvikling:
+          type: boolean
+        underTvangsavviklingEllerTvangsopplosning:
+          type: boolean
+        maalform:
+          type: string
+        overordnetEnhet:
+          type: string
+        hjemmeside:
+          type: string
+        slettedato:
+          type: string
+    BrregAdresse:
+      properties:
+        rowidObject:
+          type: string
+        land:
+          type: string
+        landkode:
+          type: string
+        postnummer:
+          type: string
+        poststed:
+          type: string
+        adresse:
+          type: array
+          items:
+            type: string
+        kommune:
+          type: string
+        kommunenummer:
+          type: string
+    BrregNaeringskode:
+      properties:
+        kode:
+          type: string
+        beskrivelse:
+          type: string
+    BrregSektorkode:
+      properties:
+        kode:
+          type: string
+        beskrivelse:
+          type: string
+    BrregOrganisasjonsform:
+      properties:
+        kode:
+          type: string
+        beskrivelse:
+          type: string
+    RefreshEvent:
+      properties:
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        mainEntityId:
+          type: string
+        subEntityId:
+          type: string
+    RestartMergeEvent:
+      properties:
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        winningMainEntityId:
+          type: string
+        losingMainEntityId:
+          type: string
+        winningSubEntityId:
+          type: string
+        losingSubEntityId:
+          type: string
+    EntityType:
+      type: string
+      enum: [
+        PARTY,
+        ADDRESS,
+        PHONE,
+        ELECTRONIC_ADDRESS,
+        CAR_RELATION,
+        DEALER_RELATION,
+        CONSENT,
+        DEALER_BRAND_RELATION,
+        COMMUNICATION_PREFERENCES,
+        EXTERNAL_ID,
+        PREFERRED_DEALER,
+        NON_LEGAL_SUBORGANISATION,
+        CAR
+      ]
+  parameters:
+    correlationId:
+      name: correlationId
+      in: header
+      description: Unique request id from the originating caller
+      required: true
+      schema:
+        type: string
+    globalSearchKeyword:
+      name: q
+      in: query
+      description: Search term to search for in the global ElasticSearch search across all indices
+      schema:
+        type: string
+    countryCode:
+      name: countryCode
+      in: query
+      description: Search term to specify country to search in when performing global searches
+      schema:
+        $ref: '#/components/schemas/CountryCode'
+    partyType:
+      name: partyType
+      in: query
+      description: PartyType field which specifies the type of party returned from the search. Will return both person and organisation if empty. Accepted values are PERSON/ORGANISATION.
+      schema:
+        $ref: '#/components/schemas/PartyType'
+    username:
+      name: username
+      in: header
+      description: Username of the local caller
+      required: true
+      schema:
+        type: string
+    System-Name:
+      name: System-Name
+      in: header
+      description: Name of system that performs POST/PUT/PATCH/DELETE
+      required: true
+      schema:
+        type: string
+        enum: [
+          CRM,
+          ADOBECAMPAIGN,
+          MDM,
+          MittBilhold,
+          EcomOrderBackend,
+          MNET,
+          CustomerLookup,
+          CarShop,
+          MasterDataMonitor
+        ]
+    Refresh-Source:
+      name: Refresh-Source
+      in: header
+      description: Name of source that requested the refresh
+      required: false
+      schema:
+        type: string
+    Source-Key:
+      name: Source-Key
+      in: header
+      description: The client's own id for the entity
+      required: false
+      schema:
+        type: string
+    partyId:
+      name: partyId
+      in: path
+      description: The party id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    externalIdId:
+      name: externalIdId
+      in: path
+      description: The id of an external id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    communicationPreferenceId:
+      name: communicationPreferenceId
+      in: path
+      description: The communication preference id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    consentId:
+      name: consentId
+      in: path
+      description: The consent id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    electronicAddressId:
+      name: electronicAddressId
+      in: path
+      description: The party electronic address id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    partyPreferredDealerId:
+      name: partyPreferredDealerId
+      in: path
+      description: The party preferred dealer id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    partyDealerId:
+      name: partyDealerId
+      in: path
+      description: The party dealer id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    partyCarId:
+      name: partyCarId
+      in: path
+      description: Party car relation ID
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    partyAddressId:
+      name: partyAddressId
+      in: path
+      description: PartyAddress id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    phoneId:
+      name: phoneId
+      in: path
+      description: Party Phone id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    carId:
+      name: carId
+      in: path
+      description: The car id
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    nonLegalSuborgId:
+      name: nonLegalSuborgId
+      in: path
+      description: The id of a Non legal suborganisation
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    dealerId:
+      name: dealerId
+      in: path
+      description: The id of a Dealer
+      required: true
+      schema:
+        type: string
+        minLength: 3
+        maxLength: 3
+    from:
+      name: from
+      in: query
+      description: The from parameter defines the offset from the first result you want to fetch.
+      schema:
+        type: integer
+        format: int32
+    size:
+      name: size
+      in: query
+      description: The size parameter allows you to configure the maximum amount of hits to be returned.
+      schema:
+        type: integer
+        format: int32
+    addressId:
+      name: addressId
+      in: path
+      description: Id of the address
+      required: true
+      schema:
+        type: string
+    includeExpired:
+      name: includeExpired
+      in: query
+      description: If the query should return old relations (Where relation end date is not null)
+      schema:
+        type: boolean
+  securitySchemes:
+    mollerApiKey:
+      type: apiKey
+      description: The Moller api key
+      name: X-Moller-api-key
+      in: header
